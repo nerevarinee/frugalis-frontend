@@ -1,5 +1,6 @@
 <script>
   import { goto } from '$app/navigation';
+  import { PUBLIC_API_URL } from '$env/static/public';
 
   let email = '';
   let password = '';
@@ -13,7 +14,7 @@
     loading = true;
 
     try {
-      const res = await fetch('http://localhost:8080/api/users/login', {
+      const res = await fetch(PUBLIC_API_URL + '/api/users/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -29,7 +30,7 @@
       }
 
       // Redirect on success
-      success = 'Registration successful! Redirecting...';
+      success = 'Login successful! Redirecting...';
       goto('/dashboard/listings');
     } catch (err) {
       error = err.message;

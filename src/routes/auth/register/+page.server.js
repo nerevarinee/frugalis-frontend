@@ -1,4 +1,5 @@
 import { fail, redirect } from '@sveltejs/kit';
+import { PUBLIC_API_URL } from '$env/static/public';
 
 export function load({ locals }) {
   if (locals.user) {
@@ -15,7 +16,7 @@ export const actions = {
     const password = data.get('password');
 
     // call your backend (Node/Express)
-    const res = await fetch('http://localhost:8080/api/register', {
+    const res = await fetch(PUBLIC_API_URL + '/api/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, email, password })

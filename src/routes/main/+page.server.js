@@ -1,5 +1,10 @@
+import { PUBLIC } from '$env/static/private'
+import { PUBLIC_API_URL } from '$env/static/public'
+import dotenv from 'dotenv'
+dotenv.config()
+
 export async function load({ fetch }) {
-  const res = await fetch('http://localhost:8080/api/listings/featured')
+  const res = await fetch(PUBLIC_API_URL+ '/api/listings/featured')
   const data = await res.json()
   return data
 }

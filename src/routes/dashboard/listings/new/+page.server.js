@@ -1,11 +1,12 @@
 import { redirect, fail } from '@sveltejs/kit'
+import { PUBLIC_API_URL } from '$env/static/public'
 
 /** @type {import('./$types').Actions} */
 export const actions = {
   default: async (event) => {
     const form = await event.request.formData()
 
-    const res = await event.fetch('http://localhost:8080/api/listings/create', {
+    const res = await event.fetch(PUBLIC_API_URL + '/api/listings/create', {
       method: 'POST',
       body: form,          // send as multipart for image upload
       credentials: 'include'

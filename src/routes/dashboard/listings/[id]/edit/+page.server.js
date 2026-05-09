@@ -1,7 +1,8 @@
 import { redirect, fail, error } from '@sveltejs/kit'
+import { PUBLIC_API_URL } from '$env/static/public'
 
 export async function load({ params, fetch, locals }) {
-  const res = await fetch(`http://localhost:8080/api/listings/${params.id}`)
+  const res = await fetch(PUBLIC_API_URL + `/api/listings/${params.id}`)
   if (!res.ok) throw error(404, 'Listing not found')
   const listing = await res.json()
 
@@ -15,7 +16,7 @@ export const actions = {
   default: async ({ params, request, fetch }) => {
     const form = await request.formData()
 
-    const res = await fetch(`http://localhost:8080/api/listings/${params.id}`, {
+    const res = await fetch(PUBLIC_API_URL + `/api/listings/${params.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(Object.fromEntries(form)),
