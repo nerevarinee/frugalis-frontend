@@ -1,5 +1,5 @@
 import { redirect } from "@sveltejs/kit";
 
-{
-  redirect(302, '/main');
+export function load() {
+  throw redirect(302, '/main');
 }
