@@ -105,7 +105,7 @@
     <!-- Seller Card -->
     <a href="/profile/{seller.username}" class="seller-card">
       <img
-        src={seller.avatar || '/default-avatar.png'}
+        src={seller.avatar || '/default-avatar.jpg'}
         alt={seller.username}
         class="seller-avatar"
       />

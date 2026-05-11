@@ -31,7 +31,8 @@
 
     loading = true
     try {
-      const res = await fetch('http://localhost:8080/api/orders/create', {
+      const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080'
+      const res = await fetch(`${API_URL}/api/orders/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

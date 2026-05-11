@@ -1,5 +1,5 @@
 // place files you want to import through the `$lib` alias in this folder.
-const BASE_URL = 'http://localhost:8080';
+const BASE_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
 
 export async function registerUser(userData) {
   const response = await fetch(`${BASE_URL}/api/users/register`, {

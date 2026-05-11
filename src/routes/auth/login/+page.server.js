@@ -8,31 +8,22 @@ export function load({ locals }) {
 }
 
 export const actions = {
-  default: async ({ request, fetch, cookies }) => {
+  default: async ({ request, fetch }) => {
     const data = await request.formData();
 
-    const username = data.get('username');
+    const email = data.get('email');
     const password = data.get('password');
 
-    const res = await fetch(PUBLIC_API_URL + '/api/login', {
+    const res = await fetch(PUBLIC_API_URL + '/api/users/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ email, password }),
+      credentials: 'include'
     });
 
     if (!res.ok) {
       return fail(400, { error: 'Invalid credentials' });
     }
-
-    const { token } = await res.json();
-
-    // store session token
-    cookies.set('access_token', token, {
-      path: '/',
-      httpOnly: true,
-      sameSite: 'strict',
-      secure: false // true in production (HTTPS)
-    });
 
     throw redirect(303, '/');
   }

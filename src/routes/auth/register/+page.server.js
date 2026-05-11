@@ -16,7 +16,7 @@ export const actions = {
     const password = data.get('password');
 
     // call your backend (Node/Express)
-    const res = await fetch(PUBLIC_API_URL + '/api/register', {
+    const res = await fetch(PUBLIC_API_URL + '/api/users/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, email, password })

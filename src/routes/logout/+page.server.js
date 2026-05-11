@@ -1,7 +1,8 @@
 import { redirect } from '@sveltejs/kit';
 
 export async function load() {
-  const res = await fetch('http://localhost:8080/api/users/logout', {
+  const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080'
+  const res = await fetch(`${API_URL}/api/users/logout`, {
     method: 'POST',
     credentials: 'include'
   });
