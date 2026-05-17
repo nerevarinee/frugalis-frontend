@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import {PUBLIC_API_URL} from '$env/static/public';
 
 	let email = '';
 	let password = '';
@@ -15,8 +16,7 @@
 		loading = true;
 
 		try {
-			const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
-			const res = await fetch(`${API_URL}/api/users/login`, {
+			const res = await fetch(`${PUBLIC_API_URL}/api/users/login`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
