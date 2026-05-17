@@ -1,20 +1,21 @@
 // place files you want to import through the `$lib` alias in this folder.
 const BASE_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
 
+/** @param {Record<string, string>} userData */
 export async function registerUser(userData) {
-  const response = await fetch(`${BASE_URL}/api/users/register`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(userData)
-  });
+	const response = await fetch(`${BASE_URL}/api/users/register`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify(userData)
+	});
 
-  const data = await response.json();
+	const data = await response.json();
 
-  if (!response.ok) {
-    throw new Error(data.message || 'Registration failed');
-  }
+	if (!response.ok) {
+		throw new Error(data.message || 'Registration failed');
+	}
 
-  return data;
+	return data;
 }

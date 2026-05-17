@@ -1,19 +1,24 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { _ } from 'svelte-i18n';
 	const dispatch = createEventDispatcher();
+
+	import { PUBLIC_API_URL } from '$env/static/public';
+	import { _ } from 'svelte-i18n';
 
 	export let listingId: string;
 	export let listingTitle: string;
+	export let listingPrice: number;
 
 	let tel = '';
 	let location = '';
+	let proposedPrice = '';
 	let deliveryType = 'delivery';
 	let loading = false;
 	let success = false;
 	let error = '';
 
-	// close on Escape key
+	$: offerTooHigh = Number(proposedPrice) >= listingPrice;
+
 	function handleKey(e: KeyboardEvent) {
 		if (e.key === 'Escape') dispatch('close');
 	}
@@ -21,21 +26,24 @@
 	async function submit() {
 		error = '';
 
-		// basic validation
+		if (!proposedPrice) return (error = $_('enter_offer'));
+		if (offerTooHigh) return (error = $_('offer_too_high', { values: { max: listingPrice } }));
 		if (!tel.trim()) return (error = $_('phone_required'));
 		if (!location.trim()) return (error = $_('location_required'));
 
 		loading = true;
+
 		try {
-			const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
-			const res = await fetch(`${API_URL}/api/orders/create`, {
+			const res = await fetch(`${PUBLIC_API_URL}/api/orders/create`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					listing: listingId,
 					tel: tel.trim(),
 					location: location.trim(),
-					deliveryType
+					type: 'offer',
+					proposedPrice: Number(proposedPrice),
+					deliveryType: deliveryType
 				})
 			});
 
@@ -56,7 +64,6 @@
 
 <svelte:window on:keydown={handleKey} />
 
-<!-- Backdrop -->
 <div class="backdrop" role="presentation">
 	<div
 		class="backdrop-click-area"
@@ -69,20 +76,18 @@
 	></div>
 	<div class="modal">
 		{#if success}
-			<!-- Success state -->
 			<div class="success-state">
 				<div class="success-icon">✓</div>
-				<h2>{$_('order_placed')}</h2>
+				<h2>{$_('offer_sent')}</h2>
 				<p>
-					{$_('order_placed_message', { values: { phone: tel } })}
+					{$_('offer_sent_message', { values: { amount: proposedPrice } })}
 				</p>
 				<button class="close-btn" on:click={() => dispatch('close')}> {$_('done')} </button>
 			</div>
 		{:else}
-			<!-- Form state -->
 			<div class="modal-header">
 				<div>
-					<h2>{$_('place_an_order')}</h2>
+					<h2>{$_('make_an_offer')}</h2>
 					<p class="modal-subtitle">{listingTitle}</p>
 				</div>
 				<button class="x-btn" on:click={() => dispatch('close')}>✕</button>
@@ -94,15 +99,25 @@
 
 			<div class="form">
 				<div class="field">
-					<label for="tel">{$_('your_phone_number')}</label>
-					<input id="tel" type="tel" bind:value={tel} placeholder={$_('phone_placeholder')} />
+					<label for="offer-price">{$_('your_offer', { values: { max: listingPrice } })}</label>
+					<input
+						id="offer-price"
+						type="number"
+						bind:value={proposedPrice}
+						placeholder={$_('offer_placeholder')}
+					/>
+				</div>
+
+				<div class="field">
+					<label for="offer-tel">{$_('your_phone_number')}</label>
+					<input id="offer-tel" type="tel" bind:value={tel} placeholder={$_('phone_placeholder')} />
 					<small>{$_('phone_hint')}</small>
 				</div>
 
 				<div class="field">
-					<label for="location">{$_('your_location')}</label>
+					<label for="offer-location">{$_('your_location')}</label>
 					<input
-						id="location"
+						id="offer-location"
 						type="text"
 						bind:value={location}
 						placeholder={$_('location_placeholder')}
@@ -133,7 +148,7 @@
 				</div>
 
 				<button class="submit-btn" on:click={submit} disabled={loading}>
-					{loading ? $_('placing_order') : $_('confirm_order')}
+					{loading ? $_('sending') : $_('send_offer')}
 				</button>
 
 				<p class="disclaimer">{$_('no_account_needed')}</p>
@@ -158,7 +173,7 @@
 	.backdrop-click-area {
 		position: fixed;
 		inset: 0;
-		z-index: 0; /* sits behind the modal */
+		z-index: 0;
 	}
 
 	.modal {
@@ -183,7 +198,6 @@
 		}
 	}
 
-	/* ── Header ── */
 	.modal-header {
 		display: flex;
 		justify-content: space-between;
@@ -221,7 +235,6 @@
 		color: #111;
 	}
 
-	/* ── Form ── */
 	.form {
 		display: flex;
 		flex-direction: column;
@@ -241,7 +254,8 @@
 	}
 
 	input[type='tel'],
-	input[type='text'] {
+	input[type='text'],
+	input[type='number'] {
 		padding: 0.7rem 0.9rem;
 		border: 3px solid #000;
 		font-size: 0.95rem;
@@ -250,7 +264,8 @@
 	}
 
 	input[type='tel']:focus,
-	input[type='text']:focus {
+	input[type='text']:focus,
+	input[type='number']:focus {
 		outline: none;
 		background: #f5f5f5;
 	}
@@ -260,50 +275,6 @@
 		color: #aaa;
 	}
 
-	/* ── Delivery options ── */
-	.delivery-options {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 0.75rem;
-	}
-
-	.option {
-		border: 3px solid #ddd;
-		padding: 0.85rem;
-		cursor: pointer;
-	}
-
-	.option.selected {
-		border-color: #000;
-		background: #f5f5f5;
-	}
-
-	.option input[type='radio'] {
-		display: none;
-	}
-
-	.option-content {
-		display: flex;
-		flex-direction: column;
-		gap: 0.15rem;
-	}
-
-	.option-icon {
-		font-size: 1.3rem;
-	}
-
-	.option-label {
-		font-weight: 700;
-		font-size: 0.9rem;
-		color: #111;
-	}
-
-	.option-desc {
-		font-size: 0.75rem;
-		color: #888;
-	}
-
-	/* ── Submit ── */
 	.submit-btn {
 		width: 100%;
 		padding: 0.9rem;
@@ -334,7 +305,6 @@
 		margin: 0;
 	}
 
-	/* ── Error ── */
 	.error {
 		background: #fff;
 		color: #ef4444;
@@ -344,7 +314,6 @@
 		margin: 0;
 	}
 
-	/* ── Success ── */
 	.success-state {
 		display: flex;
 		flex-direction: column;
@@ -393,13 +362,9 @@
 		color: #000;
 	}
 
-	/* ── Responsive ── */
 	@media (max-width: 480px) {
 		.modal {
 			padding: 1.25rem;
-		}
-		.delivery-options {
-			grid-template-columns: 1fr;
 		}
 	}
 </style>

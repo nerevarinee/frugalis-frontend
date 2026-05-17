@@ -1,11 +1,16 @@
 <script>
-  import AuthNavbar from '$lib/components/authNavbar.svelte';
+	import Navbar from '$lib/components/navbar.svelte';
+	import AuthNavbar from '$lib/components/authNavbar.svelte';
 
+	export let data;
 </script>
 
-<AuthNavbar/>
-
+{#if data.user}
+	<AuthNavbar />
+{:else}
+	<Navbar />
+{/if}
 
 <main>
-  <slot />
+	<slot />
 </main>
