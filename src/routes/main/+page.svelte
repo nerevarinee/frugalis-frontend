@@ -49,7 +49,6 @@
 	}
 
 	.banner-content {
-		max-width: 600px;
 		margin: 0 4rem;
 		display: flex;
 		flex-direction: column;
