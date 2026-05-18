@@ -59,6 +59,7 @@
 		font-size: 0.9rem;
 		font-weight: 600;
 		margin: 0 0 0.25rem 0;
+		font-family: 'video', sans-serif;
 	}
 
 	.meta,

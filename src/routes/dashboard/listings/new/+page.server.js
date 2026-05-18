@@ -1,4 +1,4 @@
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import { PUBLIC_API_URL } from '$env/static/public';
 
 /** @type {import('./$types').Actions} */
@@ -16,12 +16,7 @@ export const actions = {
 			const err = await res.json();
 			return fail(400, { error: err.message });
 		}
-		if (res.ok && res.status === 201) {
-			alert('Listing created successfully!');
-			return { success: true };
-		}
 
-		// const listing = await res.json()
-		// throw redirect(303, `/dashboard/listings`)
+		throw redirect(303, '/dashboard/listings');
 	}
 };

@@ -1,7 +1,11 @@
-<script>
+<script lang="ts">
+	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
+	import { goto } from '$app/navigation';
 	import OrderModal from '$lib/components/OrderModal.svelte';
 	import OfferModal from '$lib/components/OfferModal.svelte';
+	import { get } from 'svelte/store';
+	import { guest } from '$lib/stores/auth';
 	import { _ } from 'svelte-i18n';
 
 	export let data;
@@ -11,6 +15,75 @@
 	let selectedImage = 0;
 	let showOrderModal = false;
 	let showOfferModal = false;
+	let saved = false;
+	let saving = false;
+	const guestInfo = get(guest);
+
+	const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
+
+	onMount(async () => {
+		if (!guestInfo?.token) return;
+		try {
+			const res = await fetch(`${API_URL}/api/guests/saved-listings`, {
+				headers: { Authorization: `Bearer ${guestInfo.token}` }
+			});
+			if (!res.ok) return;
+			const savedListings = await res.json();
+			saved = savedListings.some((l: Record<string, unknown>) => l._id === listing._id);
+		} catch {
+			// silently fail
+		}
+	});
+
+	async function toggleSave() {
+		if (!guestInfo?.token) {
+			goto(resolve('/guest/login'));
+			return;
+		}
+		saving = true;
+		try {
+			if (saved) {
+				const res = await fetch(`${API_URL}/api/guests/saved-listings/${listing._id}`, {
+					method: 'DELETE',
+					headers: { Authorization: `Bearer ${guestInfo.token}` }
+				});
+				if (res.ok) saved = false;
+			} else {
+				const res = await fetch(`${API_URL}/api/guests/saved-listings`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${guestInfo.token}`
+					},
+					body: JSON.stringify({ listingId: listing._id })
+				});
+				if (res.ok) saved = true;
+			}
+		} catch {
+			// silently fail
+		} finally {
+			saving = false;
+		}
+	}
+
+	async function messageSeller() {
+		if (!guestInfo?.token) {
+			goto(resolve('/guest/login'));
+			return;
+		}
+		try {
+			const res = await fetch(`${API_URL}/api/messages/conversations`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${guestInfo.token}` },
+				body: JSON.stringify({ listingId: listing._id })
+			});
+			if (!res.ok) throw new Error('Failed to create conversation');
+			const conv = await res.json();
+			goto(resolve(`/guest/messages/${conv._id}`));
+		} catch {
+			// silently fail
+		}
+	}
 </script>
 
 <svelte:head>
@@ -79,6 +152,12 @@
 				<button class="order-btn" on:click={() => (showOrderModal = true)}> {$_('order')} </button>
 				<button class="offer-btn" on:click={() => (showOfferModal = true)}>
 					{$_('make_an_offer')}
+				</button>
+				<button class="save-btn" on:click={toggleSave} disabled={saving}>
+					{saved ? $_('guest_unsave_listing') : $_('guest_save_listing')}
+				</button>
+				<button class="msg-btn" on:click={messageSeller}>
+					{$_('message_seller')}
 				</button>
 			</div>
 		{:else}
@@ -340,6 +419,51 @@
 		background: #e5e5e5;
 		color: #999;
 		cursor: not-allowed;
+	}
+
+	.save-btn {
+		width: 70%;
+		font-family: 'Jaldi', sans-serif;
+		padding: 1rem;
+		background: #fff;
+		color: #000;
+		border: 3px solid #000;
+		border-radius: 0px;
+		font-size: 1.05rem;
+		font-weight: 700;
+		cursor: pointer;
+		transition: background 0.2s;
+	}
+
+	.save-btn:hover:not(:disabled) {
+		background: #000;
+		color: #fff;
+	}
+
+	.save-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.msg-btn {
+		width: 70%;
+		font-family: 'Jaldi', sans-serif;
+		padding: 1rem;
+		background: #000;
+		color: #fff;
+		border: 3px solid #000;
+		border-radius: 0px;
+		font-size: 1.05rem;
+		font-weight: 700;
+		cursor: pointer;
+		transition:
+			background 0.2s,
+			color 0.2s;
+	}
+
+	.msg-btn:hover {
+		background: #fff;
+		color: #000;
 	}
 
 	/* ── Seller Card ── */

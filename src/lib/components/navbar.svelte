@@ -1,9 +1,34 @@
 <script lang="ts">
+	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { guest } from '$lib/stores/auth';
 	import { _ } from 'svelte-i18n';
+
 	let query = '';
 	let mobileOpen = false;
+	let unreadCount = 0;
+	let unreadTimer: ReturnType<typeof setInterval> | null = null;
+
+	const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
+
+	async function fetchUnreadCount() {
+		if (!$guest?.token) {
+			unreadCount = 0;
+			return;
+		}
+		try {
+			const res = await fetch(`${API_URL}/api/messages/unread-count`, {
+				headers: { Authorization: `Bearer ${$guest.token}` }
+			});
+			if (res.ok) {
+				const data = await res.json();
+				unreadCount = data.count;
+			}
+		} catch {
+			// silent
+		}
+	}
 
 	function toggleMobileMenu() {
 		mobileOpen = !mobileOpen;
@@ -14,6 +39,21 @@
 		if (!query.trim()) return;
 		goto(resolve(`/listings?search=${encodeURIComponent(query.trim())}`));
 	}
+
+	function guestLogout() {
+		guest.logout();
+		unreadCount = 0;
+		goto(resolve('/'));
+	}
+
+	onMount(() => {
+		fetchUnreadCount();
+		unreadTimer = setInterval(fetchUnreadCount, 30000);
+	});
+
+	onDestroy(() => {
+		if (unreadTimer) clearInterval(unreadTimer);
+	});
 </script>
 
 <nav class="nav">
@@ -54,13 +94,33 @@
 				</a>
 			</div>
 			<div class="user-area">
-				<a href={resolve('/auth/register')}
-					><button class="bam-button" type="button">{$_('become_a_member')}</button></a
-				>
 				<a href={resolve('/legal')} class="terms-link">{$_('terms_of_service')}</a>
+			</div>
+			<div>
+				{#if $guest?.token}
+					<span class="guest-phone"
+						>{$_('guest_logged_in_as', { values: { phone: $guest.phone } })}</span
+					>
+					<button class="logout-button" type="button" on:click={guestLogout}
+						>{$_('guest_logout')}</button
+					>
+				{:else}
+					<a href={resolve('/auth/register')}
+						><button class="bam-button" type="button">{$_('become_a_member')}</button></a
+					>
+					<a href={resolve('/guest/login')} class="terms-link">{$_('guest_track_orders_link')}</a>
+				{/if}
 			</div>
 		</div>
 		<div class="nav-links">
+			{#if $guest?.token}
+				<a href={resolve('/guest/orders')} class="terms-link">{$_('guest_my_orders')}</a>
+				<a href={resolve('/guest/messages')} class="terms-link"
+					>{$_('conversations')}{#if unreadCount > 0}
+						<span class="unread-badge">{unreadCount}</span>{/if}</a
+				>
+				<a href={resolve('/favourites')} class="terms-link">{$_('favourites_page')}</a>
+			{/if}
 			<a href={resolve('/listings')}>{$_('browse_listings')}</a>
 			<a href={resolve('/auth/login')}>{$_('login')}</a>
 		</div>
@@ -82,7 +142,18 @@
 		</div>
 		<a href={resolve('/listings')} class="mobile-link">{$_('browse_listings')}</a>
 		<a href={resolve('/auth/login')} class="mobile-link">{$_('login')}</a>
-		<a href={resolve('/auth/register')} class="mobile-link">{$_('become_a_member')}</a>
+		{#if $guest?.token}
+			<a href={resolve('/guest/orders')} class="mobile-link">{$_('guest_my_orders')}</a>
+			<a href={resolve('/guest/messages')} class="mobile-link"
+				>{$_('conversations')}{#if unreadCount > 0}
+					({unreadCount}){/if}</a
+			>
+			<a href={resolve('/favourites')} class="mobile-link">{$_('favourites_page')}</a>
+			<button class="mobile-link mobile-logout" on:click={guestLogout}>{$_('guest_logout')}</button>
+		{:else}
+			<a href={resolve('/guest/login')} class="mobile-link">{$_('guest_track_orders_link')}</a>
+			<a href={resolve('/auth/register')} class="mobile-link">{$_('become_a_member')}</a>
+		{/if}
 		<a href={resolve('/legal')} class="mobile-link">{$_('terms_of_service')}</a>
 	</div>
 </nav>
@@ -203,6 +274,21 @@
 		color: White;
 	}
 
+	.logout-button {
+		border: none;
+		padding: 6px 12px;
+		background: white;
+		border: 1px solid black;
+		cursor: pointer;
+		font-size: 13px;
+		font-weight: 600;
+		font-family: 'Jaldi', sans-serif;
+	}
+	.logout-button:hover {
+		background: black;
+		color: White;
+	}
+
 	a {
 		text-decoration: none;
 		color: black;
@@ -222,6 +308,41 @@
 		font-size: 16px;
 		font-weight: 750;
 		font-family: 'Jaldi', sans-serif;
+	}
+
+	.unread-badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: #000;
+		color: #fff;
+		font-size: 0.7rem;
+		font-weight: 700;
+		min-width: 18px;
+		height: 18px;
+		padding: 0 4px;
+		border-radius: 9px;
+		margin-left: 4px;
+		vertical-align: middle;
+		line-height: 1;
+	}
+
+	.guest-phone {
+		font-size: 0.85rem;
+		color: #555;
+		margin-right: 1rem;
+		white-space: nowrap;
+	}
+
+	.mobile-logout {
+		background: none;
+		border: none;
+		font-family: inherit;
+		font-size: 14px;
+		font-weight: 600;
+		cursor: pointer;
+		width: 100%;
+		text-align: center;
 	}
 
 	.mobile-header {

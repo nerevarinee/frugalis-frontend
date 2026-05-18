@@ -1,39 +1,24 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { PUBLIC_API_URL } from '$env/static/public';
-
-	let email = '';
-	let password = '';
-	let error = '';
-	let success = '';
-	let loading = false;
+	import { guest } from '$lib/stores/auth';
 	import { _ } from 'svelte-i18n';
+
+	let phone = '';
+	let error = '';
+	let loading = false;
 
 	async function handleSubmit(event: SubmitEvent) {
 		event.preventDefault();
 		error = '';
+		if (!phone.trim()) {
+			error = 'Phone number is required';
+			return;
+		}
 		loading = true;
-
 		try {
-			const res = await fetch(`${PUBLIC_API_URL}/api/users/login`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				credentials: 'include', // Important for cookies
-				body: JSON.stringify({ email, password })
-			});
-
-			const data = await res.json();
-
-			if (!res.ok) {
-				throw new Error(data.message || 'Login failed');
-			}
-
-			// Redirect on success
-			success = 'Login successful! Redirecting...';
-			goto(resolve('/dashboard/listings'));
+			await guest.login(phone.trim());
+			goto(resolve('/'));
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Login failed';
 		} finally {
@@ -42,7 +27,7 @@
 	}
 </script>
 
-<a href={resolve('/main')}>
+<a href={resolve('/')}>
 	<img
 		alt="logo"
 		src="/logo-FRUGALI.png"
@@ -51,31 +36,26 @@
 	/>
 </a>
 <div class="container">
-	<h1>{$_('login')}</h1>
+	<h1>{$_('guest_login_title')}</h1>
+	<p class="subtitle">{$_('guest_login_subtitle')}</p>
 
 	<form on:submit|preventDefault={handleSubmit}>
-		<input type="email" placeholder={$_('email')} bind:value={email} required />
-
-		<input type="password" placeholder={$_('password')} bind:value={password} required />
+		<input type="tel" placeholder={$_('guest_phone_placeholder')} bind:value={phone} required />
 
 		<button type="submit" disabled={loading}>
-			{#if loading}
-				{$_('logging_in')}
-			{:else}
-				{$_('login')}
-			{/if}
+			{loading ? $_('guest_logging_in') : $_('guest_continue')}
 		</button>
 	</form>
 
+	<p class="disclaimer">{$_('guest_disclaimer')}</p>
+
 	{#if error}
-		<p class="error">{$_('login_error')}</p>
+		<p class="error">{error}</p>
 	{/if}
 
-	{#if success}
-		<p class="success">{$_('login_success')}</p>
-	{/if}
-
-	<p>{$_('login_footer')} <a href={resolve('/auth/register')}>{$_('register_here')}</a></p>
+	<p class="footer-link">
+		{$_('guest_seller_prompt')} <a href={resolve('/auth/register')}>{$_('become_a_member')}</a>
+	</p>
 </div>
 
 <style>
@@ -97,7 +77,14 @@
 	h1 {
 		text-align: center;
 		color: #333;
-		margin-bottom: 20px;
+		margin-bottom: 0.5rem;
+	}
+
+	.subtitle {
+		text-align: center;
+		color: #888;
+		font-size: 0.9rem;
+		margin-bottom: 1.5rem;
 	}
 
 	form {
@@ -141,6 +128,13 @@
 		cursor: not-allowed;
 	}
 
+	.disclaimer {
+		text-align: center;
+		font-size: 0.78rem;
+		color: #aaa;
+		margin-top: 1rem;
+	}
+
 	.error {
 		color: #d32f2f;
 		background-color: #ffebee;
@@ -150,27 +144,15 @@
 		text-align: center;
 	}
 
-	.success {
-		color: #2e7d32;
-		background-color: #e8f5e8;
-		padding: 10px;
-		border-radius: 4px;
-		margin-top: 15px;
+	.footer-link {
 		text-align: center;
-	}
-
-	p {
-		text-align: center;
-		margin-top: 20px;
+		margin-top: 1.5rem;
+		font-size: 0.9rem;
 		color: #666;
 	}
 
-	a {
+	.footer-link a {
 		color: #262726;
-		text-decoration: none;
-	}
-
-	a:hover {
 		text-decoration: underline;
 	}
 </style>

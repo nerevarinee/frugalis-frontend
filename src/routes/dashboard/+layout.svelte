@@ -12,6 +12,7 @@
 		{ href: '/dashboard/listings', key: 'my_listings', icon: '' },
 		{ href: '/dashboard/listings/new', key: 'sell_item', icon: '' },
 		{ href: '/dashboard/orders', key: 'orders', icon: '' },
+		{ href: '/dashboard/messages', key: 'conversations', icon: '' },
 		{ href: '/dashboard/settings', key: 'account_settings', icon: '' }
 	];
 
@@ -42,9 +43,10 @@
 							| '/dashboard/listings'
 							| '/dashboard/listings/new'
 							| '/dashboard/orders'
+							| '/dashboard/messages'
 							| '/dashboard/settings'
 					)}
-					class:active={currentPath === link.href}
+					class:active={currentPath === link.href || currentPath.startsWith(link.href + '/')}
 				>
 					<span>{link.icon}</span>
 					{$_(link.key)}

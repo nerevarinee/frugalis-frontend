@@ -1,12 +1,18 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import { get } from 'svelte/store';
+	import { guest } from '$lib/stores/auth';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { _ } from 'svelte-i18n';
 	const dispatch = createEventDispatcher();
 
 	export let listingId: string;
 	export let listingTitle: string;
 
-	let tel = '';
+	const guestInfo = get(guest);
+
+	let tel = guestInfo?.phone || '';
 	let location = '';
 	let deliveryType = 'delivery';
 	let loading = false;
@@ -28,15 +34,20 @@
 		loading = true;
 		try {
 			const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
+			const body: Record<string, unknown> = {
+				listing: listingId,
+				tel: tel.trim(),
+				location: location.trim(),
+				deliveryType
+			};
+			if (guestInfo?.token) {
+				body.guestToken = guestInfo.token;
+			}
 			const res = await fetch(`${API_URL}/api/orders/create`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					listing: listingId,
-					tel: tel.trim(),
-					location: location.trim(),
-					deliveryType
-				})
+				credentials: 'include',
+				body: JSON.stringify(body)
 			});
 
 			if (!res.ok) {
@@ -136,7 +147,17 @@
 					{loading ? $_('placing_order') : $_('confirm_order')}
 				</button>
 
-				<p class="disclaimer">{$_('no_account_needed')}</p>
+				<p class="disclaimer">
+					{#if guestInfo?.token}
+						{$_('guest_ordering_as', { values: { phone: guestInfo.phone } })}
+					{:else}
+						{$_('no_account_needed')}
+						<br />
+						<button class="track-link" on:click={() => goto(resolve('/guest/login'))}>
+							{$_('guest_track_orders_link')}
+						</button>
+					{/if}
+				</p>
 			</div>
 		{/if}
 	</div>
@@ -332,6 +353,23 @@
 		font-size: 0.78rem;
 		color: #aaa;
 		margin: 0;
+	}
+
+	.track-link {
+		background: none;
+		border: none;
+		color: #000;
+		font-size: 0.78rem;
+		font-weight: 600;
+		text-decoration: underline;
+		cursor: pointer;
+		padding: 0;
+		margin-top: 0.3rem;
+		font-family: inherit;
+	}
+
+	.track-link:hover {
+		color: #555;
 	}
 
 	/* ── Error ── */
